@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package logdata;
+option go_package = "github.com/logdata";
+
+service Logger {
+  // RPC для запису нового рядка
+  rpc LogData (LogRequest) returns (LogResponse);
+}
+
+message LogRequest {
+  double load = 1; // Навантаження
+}
+
+message LogResponse {
+  string message = 1; // Підтвердження запису
+}
+
+
