@@ -1,0 +1,35 @@
+name: release
+on:
+  push:
+    tags:
+      - 'tartelette-test-v*'
+
+
+permissions:
+  contents: write
+
+jobs:
+  goreleaser:
+    runs-on: [self-hosted, shared]
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      -
+        name: Unshallow
+        run: git fetch --prune --unshallow
+      -
+        name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v3.2.0
+        with:
+          version: latest
+          args: release --rm-dist
+          workdir: "/src/tartelette"
+        env:          # GitHub sets this automatically
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
