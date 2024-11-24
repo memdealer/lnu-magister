@@ -5,10 +5,22 @@ import (
 	"log"
 	"time"
 
+	"github.com/shirou/gopsutil/cpu"
 	pb "path/to/generated/logdata" // Замініть на реальний шлях до logdata.pb.go
 
 	"google.golang.org/grpc"
 )
+
+func getSystemLoad() (float64, error) {
+	// Отримуємо завантаження CPU за останню секунду
+	loads, err := cpu.Percent(1*time.Second, false)
+	if err != nil {
+		return 0, err
+	}
+
+	// Повертаємо перше значення завантаження (середнє для всіх ядер)
+	return loads[0], nil
+}
 
 func main() {
 	// Підключення до сервера
@@ -20,8 +32,11 @@ func main() {
 
 	client := pb.NewLoggerClient(conn)
 
-	// Випадкове значення навантаження
-	load := float64(10 + rand.Intn(90)) // Навантаження у діапазоні [10, 100]
+	// Отримання поточного завантаження системи
+	load, err := getSystemLoad()
+	if err != nil {
+		log.Fatalf("Помилка під час отримання навантаження системи: %v", err)
+	}
 
 	// Виклик RPC LogData
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
