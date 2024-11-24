@@ -3,16 +3,20 @@ package main
 import (
 	"encoding/csv"
 	"fmt"
-	"math/rand"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/shirou/gopsutil/cpu"
 )
 
-// Генерація випадкового значення навантаження
-func generateLoad() float64 {
-	rand.Seed(time.Now().UnixNano())
-	return rand.Float64() * 100.0 // Випадкове значення від 0 до 100
+// Отримання поточного навантаження системи
+func getSystemLoad() (float64, error) {
+	loads, err := cpu.Percent(1*time.Second, false)
+	if err != nil {
+		return 0, err
+	}
+	return loads[0], nil // Перше значення для всіх ядер
 }
 
 // Розрахунок часу відповіді на основі навантаження
@@ -50,11 +54,17 @@ func appendToCSV(load, responseTime float64) error {
 
 // Обробник запиту для запису нового рядка у CSV
 func handleRequest(w http.ResponseWriter, r *http.Request) {
-	load := generateLoad()
+	load, err := getSystemLoad()
+	if err != nil {
+		http.Error(w, "Не вдалося отримати навантаження системи", http.StatusInternalServerError)
+		fmt.Println("Помилка:", err)
+		return
+	}
+
 	responseTime := calculateResponseTime(load)
 
 	// Запис у файл
-	err := appendToCSV(load, responseTime)
+	err = appendToCSV(load, responseTime)
 	if err != nil {
 		http.Error(w, "Не вдалося записати дані у файл", http.StatusInternalServerError)
 		fmt.Println("Помилка:", err)
